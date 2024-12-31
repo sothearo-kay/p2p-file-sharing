@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { io, Socket } from "socket.io-client";
+import FileUploader from "./components/file-uploader";
 
 interface Message {
   sender: string;
   content: string;
 }
-
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
@@ -59,7 +59,7 @@ export default function App() {
 
   return (
     <div className="container h-screen pt-20">
-      <div className="mx-auto max-w-[40rem] rounded-md border">
+      <div className="mx-auto max-w-[40rem] rounded-lg border">
         <div className="rounded-t-md border-b bg-neutral-100 p-4">
           <h2 className="text-xl font-bold text-neutral-700">Tos Chat</h2>
         </div>
