@@ -16,7 +16,7 @@ The project is divided into two main parts:
 - **Server**: The back-end server powered by Node.js, Express, and Socket.IO.
 
 ```
-file-sharing-app/
+p2p-file-sharing/
 ├── client/     # Frontend React application
 ├── server/     # Backend Node.js server
 └── package.json # Root configuration for managing both client and server

@@ -64,7 +64,7 @@ export default function App() {
           <h2 className="text-xl font-bold text-neutral-700">Tos Chat</h2>
         </div>
 
-        <div className="p-4">
+        <div className="py-4 [&>*]:px-4">
           <div
             ref={messagesRef}
             className="h-[384px] space-y-2 overflow-y-auto"
