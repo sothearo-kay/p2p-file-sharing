@@ -13,7 +13,7 @@ export default function App() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    socketRef.current = io("http://localhost:3000");
+    socketRef.current = io(`http://${import.meta.env.VITE_YOUR_IP}:3000`);
     const socket = socketRef.current;
 
     socket.on("connect", () => {
