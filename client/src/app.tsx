@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { io, Socket } from "socket.io-client";
 
 interface Message {
@@ -10,29 +11,36 @@ export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState<string>("");
   const socketRef = useRef<Socket | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+
+  const scrollToLastMessage = useCallback(() => {
+    const lastMessage = messagesRef.current!.lastElementChild;
+    if (lastMessage) {
+      lastMessage.scrollIntoView({ block: "end", behavior: "smooth" });
+    }
+  }, []);
 
   useEffect(() => {
-    socketRef.current = io(`http://${import.meta.env.VITE_YOUR_IP}:3000`);
-    const socket = socketRef.current;
+    const socket = io(`http://${import.meta.env.VITE_YOUR_IP}:3000`);
+    socketRef.current = socket;
 
     socket.on("connect", () => {
       console.log("Connected to server");
     });
 
     socket.on("message", (message: Message) => {
-      setMessages((prev) => [...prev, message]);
+      flushSync(() => {
+        setMessages((prev) => [...prev, message]);
+      });
+
+      scrollToLastMessage();
     });
 
     return () => {
       socket.disconnect();
+      socketRef.current = null;
     };
-  }, []);
-
-  useEffect(() => {
-    if (!messagesEndRef.current) return;
-    messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [scrollToLastMessage]);
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,8 +49,12 @@ export default function App() {
     const newMessage = { sender: "You", content: input };
     socketRef.current!.emit("message", { content: input });
 
-    setMessages((prev) => [...prev, newMessage]);
-    setInput("");
+    flushSync(() => {
+      setMessages((prev) => [...prev, newMessage]);
+      setInput("");
+    });
+
+    scrollToLastMessage();
   };
 
   return (
@@ -53,7 +65,10 @@ export default function App() {
         </div>
 
         <div className="p-4">
-          <div className="h-[384px] space-y-2 overflow-y-auto">
+          <div
+            ref={messagesRef}
+            className="h-[384px] space-y-2 overflow-y-auto"
+          >
             {messages.map((message, index) => (
               <div
                 key={index}
@@ -72,7 +87,6 @@ export default function App() {
                 </div>
               </div>
             ))}
-            <div ref={messagesEndRef}></div>
           </div>
 
           <form onSubmit={sendMessage} className="mt-4 flex gap-2">

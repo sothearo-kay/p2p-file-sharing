@@ -52,6 +52,14 @@ Run the following scripts from the root directory:
 
   Runs both the client and server development servers concurrently.
 
+- **Build for Production**:
+
+  ```
+  npm run build
+  ```
+
+  Builds both the client and server for production.
+
 ## Configuration
 
 ### Environment Variables
