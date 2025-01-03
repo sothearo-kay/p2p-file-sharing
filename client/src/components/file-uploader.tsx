@@ -9,6 +9,7 @@ import {
 import { Upload, AlertCircle } from "lucide-react";
 import { useSocket } from "../context/socket-context";
 import FileItem from "./file-item";
+import { categorizeFiles } from "../utils/file-utils";
 
 export interface FileWithPreview extends File {
   preview?: string;
@@ -25,17 +26,7 @@ const FileUploader: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { images, others } = files.reduce(
-    (acc, file) => {
-      if (file.type.startsWith("image/")) {
-        acc.images.push(file);
-      } else {
-        acc.others.push(file);
-      }
-      return acc;
-    },
-    { images: [] as FileWithPreview[], others: [] as FileWithPreview[] },
-  );
+  const { imageFiles, otherFiles } = categorizeFiles(files);
 
   const addFiles = useCallback(
     (newFiles: File[]) => {
@@ -201,7 +192,7 @@ const FileUploader: React.FC = () => {
               Selected Files:
             </h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {images.map((file) => (
+              {imageFiles.map((file) => (
                 <FileItem
                   key={file.name}
                   file={file}
@@ -210,7 +201,7 @@ const FileUploader: React.FC = () => {
               ))}
             </div>
             <div className="mt-4 space-y-4">
-              {others.map((file) => (
+              {otherFiles.map((file) => (
                 <FileItem
                   key={file.name}
                   file={file}

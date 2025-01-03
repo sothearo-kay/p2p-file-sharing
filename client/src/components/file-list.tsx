@@ -1,18 +1,14 @@
 import { useEffect, useState } from "react";
 import { useSocket } from "../context/socket-context";
-import {
-  Download,
-  FileIcon,
-  ImageIcon,
-  FileSpreadsheetIcon,
-  FileTextIcon,
-} from "lucide-react";
+import { Download, ImageIcon } from "lucide-react";
+import { categorizeFiles } from "../utils/file-utils";
+import FileIcon from "./file-icon";
 
 interface UploadedFile {
   name: string;
   size: number;
   url: string;
-  fileType: string;
+  type: string;
 }
 
 interface UploadCompleteData {
@@ -53,7 +49,7 @@ const FileList: React.FC = () => {
             name: data.fileName,
             size: data.size,
             url: fileURL,
-            fileType: data.fileType,
+            type: data.fileType,
           },
         ]);
       } catch (error) {
@@ -64,7 +60,7 @@ const FileList: React.FC = () => {
     socket.on("upload_complete", onUploadComplete);
 
     return () => {
-      socket.off("upload_complete", onUploadComplete);
+      socket.off("upload_complete");
     };
   }, [socket]);
 
@@ -111,7 +107,7 @@ const FileCategory: React.FC<{ title: string; files: UploadedFile[] }> = ({
 
 const FileItem: React.FC<{ file: UploadedFile }> = ({ file }) => {
   const size = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
-  const isImage = file.fileType.includes("image");
+  const isImage = file.type.includes("image");
 
   if (isImage) {
     return (
@@ -143,14 +139,14 @@ const FileItem: React.FC<{ file: UploadedFile }> = ({ file }) => {
   }
 
   return (
-    <div className="flex items-center justify-between rounded-md border p-4">
-      <div className="flex gap-4">
+    <div className="flex items-center justify-between gap-4 rounded-md border p-4">
+      <div className="flex gap-4 overflow-hidden">
         <div className="rounded bg-gray-100 p-4">
-          {getFileIcon(file.fileType)}
+          <FileIcon fileType={file.type} />
         </div>
 
-        <div className="mt-0.5">
-          <p className="font-semibold">{file.name}</p>
+        <div className="mt-0.5 overflow-hidden">
+          <p className="truncate font-semibold">{file.name}</p>
           <p className="text-gray-500">Size: {size}</p>
         </div>
       </div>
@@ -164,25 +160,4 @@ const FileItem: React.FC<{ file: UploadedFile }> = ({ file }) => {
   );
 };
 
-const categorizeFiles = (files: UploadedFile[]) => {
-  return files.reduce(
-    (acc, file) => {
-      if (file.fileType.includes("image")) {
-        acc.imageFiles.push(file);
-      } else {
-        acc.otherFiles.push(file);
-      }
-      return acc;
-    },
-    { imageFiles: [] as UploadedFile[], otherFiles: [] as UploadedFile[] },
-  );
-};
-
-// prettier-ignore
-const getFileIcon = (fileType: string) => {
-  if (fileType.includes("pdf")) return <FileTextIcon className="text-red-500" />;
-  if (fileType.includes("doc")) return <FileIcon className="text-blue-500" />;
-  if (fileType.includes("xlsx")) return <FileSpreadsheetIcon className="text-green-500" />;
-  return <FileIcon className="text-gray-500" />;
-};
 export default FileList;

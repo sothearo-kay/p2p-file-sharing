@@ -1,5 +1,6 @@
-import { X, FileTextIcon, FileSpreadsheetIcon, FileIcon } from "lucide-react";
+import { X } from "lucide-react";
 import { FileWithPreview } from "./file-uploader";
+import FileIcon from "./file-icon";
 
 interface FileItemProps {
   file: FileWithPreview;
@@ -8,14 +9,6 @@ interface FileItemProps {
 
 const FileItem: React.FC<FileItemProps> = ({ file, handleDelete }) => {
   const isImage = file.type.startsWith("image/");
-
-  // prettier-ignore
-  const getFileIcon = (fileType: string) => {
-    if (fileType.includes("pdf")) return <FileTextIcon className="text-red-500" />;
-    if (fileType.includes("doc")) return <FileIcon className="text-blue-500" />;
-    if (fileType.includes("xlsx")) return <FileSpreadsheetIcon className="text-green-500" />;
-    return <FileIcon className="text-gray-500" />;
-  };
 
   return (
     <div className="overflow-hidden rounded-md bg-gray-100">
@@ -41,8 +34,8 @@ const FileItem: React.FC<FileItemProps> = ({ file, handleDelete }) => {
         </div>
       ) : (
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex flex-1 items-center gap-2">
-            {getFileIcon(file.type)}
+          <div className="flex flex-1 items-center gap-2 overflow-hidden">
+            <FileIcon fileType={file.type} />
             <span className="w-[80%] truncate">{file.name}</span>
           </div>
           <button
