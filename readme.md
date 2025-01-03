@@ -1,6 +1,6 @@
 # p2p file sharing
 
-A peer-to-peer file sharing application built with React, Node.js, and Socket.IO. This project enables users to share files over the same network with real-time updates.
+A peer-to-peer file sharing application built with `React`, `Node.js`, and `Socket.IO`. This project enables users to share files over the same network with real-time updates.
 
 ## Features
 
