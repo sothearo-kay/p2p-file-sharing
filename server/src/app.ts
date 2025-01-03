@@ -28,11 +28,11 @@ io.on("connection", (socket) => {
 
   const uploadedChunks = new Map<
     string,
-    { chunks: Chunk[]; uploaded: number; fileName: string }
+    { chunks: Chunk[]; uploaded: number; fileName: string; fileType: string }
   >();
 
   socket.on("upload_chunk", (file) => {
-    const { fileId, fileName, chunk, offset, total } = file;
+    const { fileId, fileName, chunk, offset, total, mimeType } = file;
 
     // Initialize file chunks array if not exists
     if (!uploadedChunks.has(fileId)) {
@@ -40,6 +40,7 @@ io.on("connection", (socket) => {
         chunks: [],
         uploaded: 0,
         fileName,
+        fileType: mimeType,
       });
     }
 
@@ -58,6 +59,7 @@ io.on("connection", (socket) => {
         fileName,
         size: total,
         file: fileBuffer.toString("base64"),
+        fileType: fileData.fileType,
       });
 
       // Cleanup

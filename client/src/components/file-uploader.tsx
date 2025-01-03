@@ -25,10 +25,7 @@ const FileUploader: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const { images, others } = files.reduce<{
-    images: FileWithPreview[];
-    others: FileWithPreview[];
-  }>(
+  const { images, others } = files.reduce(
     (acc, file) => {
       if (file.type.startsWith("image/")) {
         acc.images.push(file);
@@ -37,7 +34,7 @@ const FileUploader: React.FC = () => {
       }
       return acc;
     },
-    { images: [], others: [] },
+    { images: [] as FileWithPreview[], others: [] as FileWithPreview[] },
   );
 
   const addFiles = useCallback(
@@ -109,7 +106,7 @@ const FileUploader: React.FC = () => {
   };
 
   const uploadFile = async (file: FileWithPreview) => {
-    const { name: fileName, size: total } = file;
+    const { name: fileName, size: total, type: mimeType } = file;
     const fileId = crypto.randomUUID();
     let offset = 0;
 
@@ -124,6 +121,7 @@ const FileUploader: React.FC = () => {
         chunk: arrayBuffer,
         offset,
         total,
+        mimeType,
       });
 
       offset += CHUNK_SIZE;

@@ -8,7 +8,7 @@ const links = [
 export default function RootLayout() {
   return (
     <>
-      <header className="sticky top-0">
+      <header className="sticky top-0 backdrop-blur-lg">
         <div className="container">
           <nav className="py-4">
             <ul className="flex gap-6">
