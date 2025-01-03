@@ -1,4 +1,4 @@
-import express, { Application, Request, Response } from "express";
+import express, { Application } from "express";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import cors from "cors";
@@ -12,24 +12,75 @@ const io = new Server(server, {
   },
 });
 
+// Middleware
 app.use(cors());
-
-app.use("/api", (req: Request, res: Response) => {
-  res.send("Api is working");
-});
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 io.on("connection", (socket) => {
   console.log("User connected");
 
-  socket.on("message", (message) => {
+  socket.on("new_message", (message) => {
     const newMessage = { send: socket.id, content: message.content };
     // Broadcast the message to other clients
     socket.broadcast.emit("message", newMessage);
+  });
+
+  const uploadedChunks = new Map<
+    string,
+    { chunks: Chunk[]; uploaded: number; fileName: string }
+  >();
+
+  socket.on("upload_chunk", (file) => {
+    const { fileId, fileName, chunk, offset, total } = file;
+
+    // Initialize file chunks array if not exists
+    if (!uploadedChunks.has(fileId)) {
+      uploadedChunks.set(fileId, {
+        chunks: [],
+        uploaded: 0,
+        fileName,
+      });
+    }
+
+    const fileData = uploadedChunks.get(fileId)!;
+    fileData.chunks.push({ chunk, offset });
+    fileData.uploaded += chunk.byteLength;
+
+    // Check if upload is complete
+    if (fileData.uploaded >= total) {
+      // Combine chunks and save file
+      const fileBuffer = combineChunks(fileData.chunks);
+
+      // Notify client
+      io.emit("upload_complete", {
+        fileId,
+        fileName,
+        size: total,
+        file: fileBuffer.toString("base64"),
+      });
+
+      // Cleanup
+      uploadedChunks.delete(fileId);
+    }
   });
 
   socket.on("disconnect", () => {
     console.log("A User disconnected");
   });
 });
+
+interface Chunk {
+  chunk: ArrayBuffer;
+  offset: number;
+}
+
+function combineChunks(chunks: Chunk[]): Buffer {
+  // Sort chunks by offset
+  chunks.sort((a, b) => a.offset - b.offset);
+
+  // Combine chunks into single buffer
+  return Buffer.concat(chunks.map((c) => Buffer.from(c.chunk)));
+}
 
 export default server;

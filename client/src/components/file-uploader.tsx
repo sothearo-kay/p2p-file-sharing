@@ -7,6 +7,7 @@ import {
   useCallback,
 } from "react";
 import { Upload, AlertCircle } from "lucide-react";
+import { useSocket } from "../context/socket-context";
 import FileItem from "./file-item";
 
 export interface FileWithPreview extends File {
@@ -14,12 +15,30 @@ export interface FileWithPreview extends File {
 }
 
 const MAX_FILES = 5;
+const CHUNK_SIZE = 1024 * 64; // 64KB chunks
 
 const FileUploader: React.FC = () => {
+  const socket = useSocket();
   const [files, setFiles] = useState<FileWithPreview[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { images, others } = files.reduce<{
+    images: FileWithPreview[];
+    others: FileWithPreview[];
+  }>(
+    (acc, file) => {
+      if (file.type.startsWith("image/")) {
+        acc.images.push(file);
+      } else {
+        acc.others.push(file);
+      }
+      return acc;
+    },
+    { images: [], others: [] },
+  );
 
   const addFiles = useCallback(
     (newFiles: File[]) => {
@@ -79,9 +98,9 @@ const FileUploader: React.FC = () => {
     }
   };
 
-  const handleDelete = (index: number) => {
+  const handleDelete = (fileName: string) => {
     setFiles((prevFiles) => {
-      const updatedFiles = prevFiles.filter((_, i) => i !== index);
+      const updatedFiles = prevFiles.filter((file) => file.name !== fileName);
       if (updatedFiles.length <= MAX_FILES) {
         setError(null);
       }
@@ -89,21 +108,51 @@ const FileUploader: React.FC = () => {
     });
   };
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const uploadFile = async (file: FileWithPreview) => {
+    const { name: fileName, size: total } = file;
+    const fileId = crypto.randomUUID();
+    let offset = 0;
+
+    // Emit chunks
+    while (offset < total) {
+      const chunk = file.slice(offset, offset + CHUNK_SIZE);
+      const arrayBuffer = await chunk.arrayBuffer();
+
+      socket!.emit("upload_chunk", {
+        fileId,
+        fileName,
+        chunk: arrayBuffer,
+        offset,
+        total,
+      });
+
+      offset += CHUNK_SIZE;
+    }
+
+    return fileId;
+  };
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (files.length > 0) {
-      // Placeholder for file upload logic
-      console.log(
-        "Files submitted:",
-        files.map((file) => file.name),
-      );
+    setUploading(true);
+
+    try {
+      for (const file of files) {
+        await uploadFile(file);
+      }
       setFiles([]);
-      setError(null);
+    } catch (err) {
+      setError(
+        `An error occurred during upload: ${(err as unknown as Error).message}`,
+      );
+      console.error(err);
+    } finally {
+      setUploading(false);
     }
   };
 
   return (
-    <div className="mx-auto max-w-[48rem] rounded-lg border p-4">
+    <div className="rounded-lg border p-4">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Drag-and-Drop Area */}
         <div
@@ -154,24 +203,41 @@ const FileUploader: React.FC = () => {
               Selected Files:
             </h3>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {files.map((file, index) => (
+              {images.map((file) => (
                 <FileItem
-                  key={index}
+                  key={file.name}
                   file={file}
-                  handleDelete={() => handleDelete(index)}
+                  handleDelete={() => handleDelete(file.name)}
+                />
+              ))}
+            </div>
+            <div className="mt-4 space-y-4">
+              {others.map((file) => (
+                <FileItem
+                  key={file.name}
+                  file={file}
+                  handleDelete={() => handleDelete(file.name)}
                 />
               ))}
             </div>
           </div>
         )}
 
-        <button
-          type="submit"
-          className="w-full rounded-md bg-black px-4 py-2 text-white transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
-          disabled={files.length === 0}
-        >
-          Submit
-        </button>
+        <div className="flex justify-end">
+          <button
+            type="submit"
+            className="inline-flex items-center rounded-md bg-black px-4 py-2 text-right text-white transition-colors hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={files.length === 0}
+          >
+            {uploading ? (
+              "Uploading..."
+            ) : (
+              <>
+                <Upload className="mr-2 h-4 w-4" /> Upload
+              </>
+            )}
+          </button>
+        </div>
       </form>
     </div>
   );

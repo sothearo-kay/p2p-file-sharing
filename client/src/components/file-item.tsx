@@ -7,20 +7,17 @@ interface FileItemProps {
 }
 
 const FileItem: React.FC<FileItemProps> = ({ file, handleDelete }) => {
+  const isImage = file.type.startsWith("image/");
   const getFileIcon = (fileType: string) => {
-    if (fileType.startsWith("image/")) return null; // Images will use preview thumbnails
+    if (isImage) return null;
     if (fileType.includes("pdf")) return <File className="text-red-500" />;
     if (fileType.includes("doc")) return <File className="text-blue-500" />;
     return <File className="text-gray-500" />;
   };
 
   return (
-    <div
-      className={`overflow-hidden rounded-md bg-gray-100 ${
-        file.type.startsWith("image/") ? "col-span-1" : "col-span-full"
-      }`}
-    >
-      {file.type.startsWith("image/") ? (
+    <div className="overflow-hidden rounded-md bg-gray-100">
+      {isImage ? (
         <div className="group relative">
           <img
             src={file.preview}
@@ -42,9 +39,9 @@ const FileItem: React.FC<FileItemProps> = ({ file, handleDelete }) => {
         </div>
       ) : (
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 truncate">
             {getFileIcon(file.type)}
-            <span className="truncate">{file.name}</span>
+            <span className="w-[80%] truncate">{file.name}</span>
           </div>
           <button
             type="button"

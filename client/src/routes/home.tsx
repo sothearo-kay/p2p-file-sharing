@@ -1,11 +1,11 @@
-import { Link } from "react-router";
+import FileUploader from "../components/file-uploader";
+import FileList from "../components/file-list";
 
 export default function Home() {
   return (
-    <div>
-      <nav>
-        <Link to="/chat">chat</Link>
-      </nav>
+    <div className="space-y-6">
+      <FileUploader />
+      <FileList />
     </div>
   );
 }
